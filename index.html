@@ -1,0 +1,1937 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>律师费计算器</title>
+  <style>
+    :root {
+      --porcelain: #edf2f4;
+      --paper: #ffffff;
+      --ink: #17222c;
+      --navy: #18364a;
+      --teal: #1f6871;
+      --teal-soft: #dcebed;
+      --seal: #a84035;
+      --seal-soft: #f4e7e5;
+      --gold: #9b7a3d;
+      --line: #cbd5da;
+      --line-strong: #95a6ae;
+      --muted: #64737b;
+      --shadow: 0 22px 60px rgba(24, 54, 74, 0.11);
+      --display: "STSong", "Songti SC", "Noto Serif CJK SC", serif;
+      --body: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      --data: "DIN Alternate", "Avenir Next Condensed", "Arial Narrow", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        linear-gradient(rgba(24, 54, 74, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(24, 54, 74, 0.035) 1px, transparent 1px),
+        var(--porcelain);
+      background-size: 28px 28px;
+      font-family: var(--body);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input, select { font: inherit; }
+    button, select { cursor: pointer; }
+
+    .page-shell {
+      width: min(1240px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 36px 0 44px;
+    }
+
+    .masthead {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 28px;
+      align-items: end;
+      margin-bottom: 24px;
+    }
+
+    .brand-line {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      color: var(--navy);
+      font-size: 13px;
+      letter-spacing: .16em;
+      font-weight: 650;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--navy);
+      color: var(--navy);
+      font-family: var(--display);
+      font-size: 19px;
+      transform: rotate(-3deg);
+    }
+
+    h1 {
+      margin: 18px 0 0;
+      font-family: var(--display);
+      font-size: clamp(38px, 5.4vw, 72px);
+      line-height: .98;
+      font-weight: 600;
+      letter-spacing: -.055em;
+    }
+
+    h1 span {
+      color: var(--teal);
+      font-style: italic;
+    }
+
+    .masthead-note {
+      max-width: 330px;
+      margin: 0 0 5px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.75;
+      text-align: right;
+    }
+
+    .main-card {
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: minmax(360px, .82fr) minmax(480px, 1.18fr);
+      min-height: 650px;
+      background: var(--paper);
+      border: 1px solid var(--line-strong);
+      box-shadow: var(--shadow);
+    }
+
+    .control-panel {
+      padding: 30px;
+      border-right: 1px solid var(--line);
+      background: linear-gradient(148deg, #fbfcfd 0%, #f4f7f8 100%);
+    }
+
+    .panel-kicker {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 20px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .17em;
+      text-transform: uppercase;
+    }
+
+    .live-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--teal);
+      letter-spacing: .06em;
+    }
+
+    .live-status::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      background: var(--teal);
+      border-radius: 50%;
+      box-shadow: 0 0 0 4px var(--teal-soft);
+    }
+
+    .mode-switch {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      padding: 4px;
+      border: 1px solid var(--line);
+      background: #e9eef0;
+    }
+
+    .mode-button {
+      border: 0;
+      padding: 13px 12px;
+      color: var(--muted);
+      background: transparent;
+      font-weight: 650;
+      transition: background .2s ease, color .2s ease, box-shadow .2s ease;
+    }
+
+    .mode-button[aria-selected="true"] {
+      color: var(--navy);
+      background: var(--paper);
+      box-shadow: 0 2px 10px rgba(24, 54, 74, .09);
+    }
+
+    .field-block { margin-top: 27px; }
+
+    .field-label {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 9px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .field-label small {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .money-input-wrap {
+      display: grid;
+      grid-template-columns: 1fr 86px;
+      border: 1px solid var(--line-strong);
+      background: var(--paper);
+      transition: border-color .2s ease, box-shadow .2s ease;
+    }
+
+    .money-input-wrap:focus-within {
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px var(--teal-soft);
+    }
+
+    .money-input {
+      min-width: 0;
+      border: 0;
+      outline: 0;
+      padding: 15px 16px;
+      color: var(--navy);
+      background: transparent;
+      font-family: var(--data);
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: .02em;
+    }
+
+    .unit-select {
+      border: 0;
+      border-left: 1px solid var(--line);
+      outline: 0;
+      padding: 0 11px;
+      color: var(--navy);
+      background: #f6f8f9;
+      font-weight: 650;
+    }
+
+    .amount-in-words {
+      min-height: 21px;
+      margin: 8px 2px 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .mode-context {
+      margin-top: 19px;
+      padding: 13px 14px;
+      border-left: 3px solid var(--gold);
+      color: #58656c;
+      background: #f6f3eb;
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    details.advanced {
+      margin-top: 23px;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+
+    details.advanced summary {
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 15px 0;
+      color: var(--navy);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    details.advanced summary::-webkit-details-marker { display: none; }
+    details.advanced summary::after { content: "+"; font-size: 20px; font-weight: 400; }
+    details.advanced[open] summary::after { content: "−"; }
+
+    .advanced-content {
+      padding: 2px 0 19px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .subsection-label {
+      margin: 6px 0 -3px;
+      padding-top: 15px;
+      border-top: 1px dashed var(--line);
+      color: var(--teal);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .08em;
+    }
+
+    .option-row {
+      display: grid;
+      grid-template-columns: 1fr 145px;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .option-copy strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 13px;
+    }
+
+    .option-copy span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .compact-input, .compact-select {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      outline: 0;
+      padding: 8px 10px;
+      color: var(--navy);
+      background: var(--paper);
+      text-align: right;
+      font-weight: 650;
+    }
+
+    .compact-input:focus, .compact-select:focus {
+      border-color: var(--teal);
+      box-shadow: 0 0 0 2px var(--teal-soft);
+    }
+
+    .suffix-input {
+      display: grid;
+      grid-template-columns: 1fr 34px;
+      align-items: center;
+      border: 1px solid var(--line);
+      background: var(--paper);
+    }
+
+    .suffix-input:focus-within {
+      border-color: var(--teal);
+      box-shadow: 0 0 0 2px var(--teal-soft);
+    }
+
+    .suffix-input .compact-input {
+      min-height: 38px;
+      border: 0;
+      box-shadow: none;
+    }
+
+    .suffix-input span {
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .check-wrap {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .toggle {
+      appearance: none;
+      width: 44px;
+      height: 24px;
+      margin: 0;
+      border: 1px solid var(--line-strong);
+      background: #d8e0e3;
+      position: relative;
+      transition: background .2s ease;
+    }
+
+    .toggle::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 16px;
+      height: 16px;
+      background: white;
+      box-shadow: 0 1px 3px rgba(0,0,0,.2);
+      transition: transform .2s ease;
+    }
+
+    .toggle:checked { background: var(--teal); }
+    .toggle:checked::after { transform: translateX(20px); }
+    .toggle:focus-visible { outline: 3px solid var(--teal-soft); outline-offset: 2px; }
+
+    .action-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .action-button {
+      min-height: 44px;
+      border: 1px solid var(--navy);
+      padding: 10px 12px;
+      color: var(--navy);
+      background: transparent;
+      font-weight: 700;
+      transition: transform .16s ease, background .16s ease, color .16s ease;
+    }
+
+    .action-button.primary { color: white; background: var(--navy); }
+    .action-button:hover { transform: translateY(-1px); }
+    .action-button:focus-visible { outline: 3px solid var(--teal-soft); outline-offset: 2px; }
+
+    .result-panel {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      padding: 30px 34px 28px;
+      background: var(--paper);
+    }
+
+    .result-panel::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--teal) 0 72%, var(--seal) 72% 100%);
+    }
+
+    .result-heading {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: flex-start;
+    }
+
+    .result-eyebrow {
+      margin: 0 0 7px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .17em;
+      text-transform: uppercase;
+    }
+
+    .result-title {
+      margin: 0;
+      font-family: var(--display);
+      color: var(--navy);
+      font-size: 25px;
+      font-weight: 600;
+    }
+
+    .source-badge {
+      flex: 0 0 auto;
+      padding: 6px 9px;
+      border: 1px solid currentColor;
+      color: var(--seal);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .08em;
+    }
+
+    .result-amount {
+      margin: 28px 0 10px;
+      color: var(--navy);
+      font-family: var(--data);
+      font-size: clamp(36px, 5vw, 62px);
+      line-height: 1;
+      font-weight: 750;
+      letter-spacing: -.025em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .result-caption {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.65;
+    }
+
+    .stat-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      margin: 25px 0 22px;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .stat-item {
+      padding: 14px 13px 14px 0;
+    }
+
+    .stat-item + .stat-item {
+      padding-left: 14px;
+      border-left: 1px solid var(--line);
+    }
+
+    .stat-label {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: .06em;
+    }
+
+    .stat-value {
+      display: block;
+      color: var(--navy);
+      font-family: var(--data);
+      font-size: 17px;
+      font-weight: 750;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .result-body {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 120px;
+      gap: 24px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .breakdown-wrap { min-width: 0; }
+
+    .section-title {
+      margin: 0 0 11px;
+      color: var(--navy);
+      font-size: 12px;
+      font-weight: 750;
+      letter-spacing: .08em;
+    }
+
+    .breakdown-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 11px;
+    }
+
+    .breakdown-table th {
+      padding: 8px 7px;
+      border-bottom: 1px solid var(--line-strong);
+      color: var(--muted);
+      text-align: right;
+      font-weight: 650;
+    }
+
+    .breakdown-table th:first-child,
+    .breakdown-table td:first-child { text-align: left; width: 39%; }
+
+    .breakdown-table td {
+      padding: 8px 7px;
+      border-bottom: 1px solid #e4eaed;
+      color: #45545c;
+      text-align: right;
+      font-family: var(--data);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .breakdown-table tr.active td {
+      color: var(--teal);
+      background: #f2f8f8;
+      font-weight: 750;
+    }
+
+    .rate-ladder {
+      align-self: stretch;
+      display: flex;
+      flex-direction: column;
+      padding-left: 16px;
+      border-left: 1px solid var(--line);
+    }
+
+    .ladder-title {
+      margin-bottom: 12px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.45;
+      letter-spacing: .06em;
+    }
+
+    .ladder-steps {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 7px;
+    }
+
+    .ladder-step {
+      display: grid;
+      gap: 4px;
+      color: #8a979d;
+      font-family: var(--data);
+      font-size: 9px;
+      transition: color .2s ease;
+    }
+
+    .ladder-bar {
+      height: 5px;
+      background: #dbe3e6;
+      transform-origin: left center;
+      transition: background .2s ease, transform .2s ease;
+    }
+
+    .ladder-step.active { color: var(--teal); font-weight: 750; }
+    .ladder-step.active .ladder-bar { background: var(--teal); transform: scaleY(1.6); }
+
+    .legal-note {
+      margin-top: 20px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.65;
+    }
+
+    .legal-note strong { color: var(--seal); }
+
+    .claim-summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 20px;
+    }
+    .claim-card { padding: 11px 12px; border: 1px solid var(--line); background: #f7faf9; }
+    .claim-card strong { display: block; margin-top: 5px; color: var(--navy); font-family: var(--data); font-size: 18px; }
+    .claim-card span { color: var(--muted); font-size: 10px; }
+    .claim-card.emphasis { border-color: var(--teal); background: var(--teal-soft); }
+    .cost-note { margin: 10px 0 0; color: var(--muted); font-size: 10px; line-height: 1.6; }
+    .cost-matrix { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    .cost-matrix-item { padding: 10px 12px; border-left: 2px solid var(--line-strong); background: #fbfcfc; color: var(--muted); font-size: 10px; line-height: 1.6; }
+    .cost-matrix-item strong { display: block; margin-bottom: 3px; color: var(--navy); font-size: 11px; }
+    .quote-terms { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--line); }
+    .quote-terms-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    .quote-terms-head .section-title { margin: 0; }
+    .quote-terms-head .action-button { min-height: 36px; padding: 8px 12px; font-size: 11px; white-space: nowrap; }
+    .quote-terms-note { margin: 5px 0 10px; color: var(--muted); font-size: 10px; line-height: 1.55; }
+    .quote-terms-text { display: block; width: 100%; min-height: 190px; box-sizing: border-box; resize: vertical; border: 1px solid var(--line-strong); padding: 13px 14px; color: #33434a; background: #fbfdfc; font: 12px/1.75 var(--body); }
+    .quote-terms-text:focus { outline: 3px solid var(--teal-soft); outline-offset: 1px; }
+    .quote-letter { margin-top: 14px; border: 1px solid var(--line); background: rgba(255,255,255,.58); }
+    .quote-letter > summary { cursor: pointer; padding: 13px 15px; color: var(--navy); font-size: 12px; font-weight: 750; }
+    .quote-letter > summary::marker { color: var(--teal); }
+    .quote-letter-body { padding: 0 15px 15px; }
+    .quote-letter-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; padding: 3px 0 12px; }
+    .quote-letter-field { display: grid; gap: 5px; color: var(--muted); font-size: 10px; line-height: 1.35; }
+    .quote-letter-field input { width: 100%; box-sizing: border-box; min-height: 34px; border: 1px solid var(--line-strong); padding: 7px 9px; color: var(--navy); background: #fff; font-size: 12px; }
+    .quote-letter-field input:focus { outline: 3px solid var(--teal-soft); outline-offset: 1px; }
+    .quote-letter-choice { grid-column: 1 / -1; margin: 1px 0 0; padding: 9px 11px 10px; border: 1px solid var(--line); }
+    .quote-letter-choice legend { padding: 0 5px; color: var(--navy); font-size: 10px; font-weight: 750; }
+    .quote-letter-choice-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px; color: #46565d; font-size: 10px; line-height: 1.5; }
+    .quote-letter-choice-list label { display: inline-flex; align-items: flex-start; gap: 5px; cursor: pointer; }
+    .quote-letter-choice-list label span { display: grid; gap: 2px; }
+    .quote-letter-choice-list label strong { color: #40535b; font-size: 10px; font-weight: 700; }
+    .quote-letter-choice-list label small { color: var(--muted); font-size: 9px; line-height: 1.45; }
+    .quote-letter-choice-list input { margin: 2px 0 0; accent-color: var(--teal); }
+    .risk-basis-warning { margin: 10px 0 0; padding-top: 9px; border-top: 1px dashed var(--line); color: var(--seal); font-size: 9px; line-height: 1.55; }
+    .quote-letter-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .quote-letter-actions .action-button { min-height: 36px; padding: 8px 12px; font-size: 11px; white-space: nowrap; }
+    .quote-letter-text { min-height: 520px; background: #fff; }
+    .claim-components { display: grid; gap: 9px; padding-top: 1px; }
+    .claim-components[hidden] { display: none; }
+    .claim-components .option-row { grid-template-columns: 1fr 145px; }
+    .claim-components .option-copy span { font-size: 10px; }
+    .compact-input[disabled] { color: #8a979d; background: #eef2f3; cursor: not-allowed; }
+    .compact-money { grid-template-columns: 1fr 72px; }
+    .compact-money .money-input { padding: 9px 10px; font-size: 16px; letter-spacing: 0; }
+    .compact-money .unit-select { padding: 0 7px; font-size: 12px; }
+    .compact-money:has(input:disabled) { opacity: .55; background: #eef2f3; }
+
+    .risk-compliance {
+      padding: 11px 12px;
+      border-left: 3px solid var(--teal);
+      color: #46565d;
+      background: #f1f7f7;
+      font-size: 10px;
+      line-height: 1.6;
+    }
+
+    .risk-compliance.review { border-left-color: var(--gold); background: #f7f4ec; }
+    .risk-compliance.blocked { border-left-color: var(--seal); color: #6c3a35; background: var(--seal-soft); }
+
+    .reference-status {
+      display: inline-block;
+      margin-right: 5px;
+      padding: 1px 5px;
+      border: 1px solid currentColor;
+      color: var(--teal);
+      font-size: 9px;
+      font-weight: 750;
+      line-height: 1.4;
+      vertical-align: baseline;
+    }
+
+    .reference-status.historical { color: var(--gold); }
+    .reference-status.internal { color: var(--seal); }
+
+    .references {
+      margin-top: 18px;
+      padding: 18px 20px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.68);
+    }
+
+    .references summary {
+      cursor: pointer;
+      color: var(--navy);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .references ul {
+      margin: 12px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.8;
+    }
+
+    .references a { color: var(--teal); text-underline-offset: 3px; }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 28px;
+      z-index: 10;
+      padding: 10px 15px;
+      color: white;
+      background: var(--navy);
+      box-shadow: 0 10px 30px rgba(24,54,74,.25);
+      font-size: 12px;
+      transform: translate(-50%, 20px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease, transform .2s ease;
+    }
+
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    [hidden] { display: none !important; }
+
+    @media (max-width: 920px) {
+      .masthead { grid-template-columns: 1fr; }
+      .masthead-note { text-align: left; }
+      .main-card { grid-template-columns: 1fr; }
+      .control-panel { border-right: 0; border-bottom: 1px solid var(--line); }
+    }
+
+    @media (max-width: 560px) {
+      .page-shell { width: min(100% - 22px, 1240px); padding-top: 22px; }
+      .masthead { margin-bottom: 16px; }
+      .brand-line { letter-spacing: .09em; }
+      .control-panel, .result-panel { padding: 23px 20px; }
+      .main-card { min-height: 0; }
+      .option-row { grid-template-columns: 1fr; }
+      .check-wrap { justify-content: flex-start; }
+      .compact-input, .compact-select { text-align: left; }
+      .action-row { grid-template-columns: 1fr; }
+      .result-heading { display: grid; }
+      .source-badge { justify-self: start; }
+      .stat-strip { grid-template-columns: 1fr; }
+      .stat-item + .stat-item { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); }
+      .result-body { grid-template-columns: 1fr; }
+      .rate-ladder { display: none; }
+      .breakdown-table { font-size: 10px; }
+      .result-amount { font-size: 36px; }
+      .claim-summary { grid-template-columns: repeat(2, 1fr); }
+      .cost-matrix { grid-template-columns: 1fr; }
+      .quote-terms-head { flex-direction: column; gap: 8px; }
+      .quote-terms-head .action-button { width: 100%; }
+      .quote-letter-fields { grid-template-columns: 1fr; }
+      .quote-letter-choice-list { grid-template-columns: 1fr; }
+      .quote-letter-actions { align-items: stretch; flex-direction: column; }
+      .quote-letter-actions .action-button { width: 100%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+    }
+
+    @media print {
+      body { background: white; }
+      .page-shell { width: 100%; padding: 0; }
+      .masthead { margin-bottom: 12px; }
+      h1 { font-size: 40px; }
+      .control-panel, .references, .action-row, .masthead-note { display: none !important; }
+      .main-card { display: block; min-height: auto; border: 1px solid #777; box-shadow: none; }
+      .result-panel { padding: 26px; }
+      .result-body { min-height: 330px; }
+      .result-amount { font-size: 48px; }
+      a { color: inherit; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page-shell">
+    <header class="masthead">
+      <div>
+        <div class="brand-line">
+          <span class="brand-mark" aria-hidden="true">费</span>
+          <span>律师费测算工具</span>
+        </div>
+        <h1>律师费<span>测算</span></h1>
+      </div>
+      <p class="masthead-note">先分清律师服务费与诉讼费用，再按对应口径测算；固定收费保留历史参考层，风险代理校验现行最高限额。结果仅用于讨论。</p>
+    </header>
+
+    <section class="main-card" aria-label="律师费计算器">
+      <div class="control-panel">
+        <div class="panel-kicker">
+          <span>Quotation calculator</span>
+          <span class="live-status">实时测算</span>
+        </div>
+
+        <div class="mode-switch" role="tablist" aria-label="收费模式">
+          <button class="mode-button" id="fixedTab" role="tab" aria-selected="true" aria-controls="fixedOptions" data-mode="fixed">固定收费</button>
+          <button class="mode-button" id="riskTab" role="tab" aria-selected="false" aria-controls="riskOptions" data-mode="risk">风险代理</button>
+        </div>
+
+        <div class="field-block">
+          <label class="field-label" for="amount">
+            <span id="amountLabel">诉讼请求金额／价额</span>
+            <small>输入数字即可</small>
+          </label>
+          <div class="money-input-wrap">
+            <input class="money-input" id="amount" type="text" inputmode="decimal" autocomplete="off" value="100" aria-describedby="amountHelp">
+            <select class="unit-select" id="unit" aria-label="金额单位">
+              <option value="1">元</option>
+              <option value="10000" selected>万元</option>
+              <option value="100000000">亿元</option>
+            </select>
+          </div>
+          <p class="amount-in-words" id="amountHelp">人民币 1,000,000 元</p>
+        </div>
+
+        <div class="mode-context" id="modeContext">
+          律师服务费按《苏价费〔2017〕113号》“涉及财产、分档费率累进”口径作历史参考；下方另行显示案件受理费与财产保全费。
+        </div>
+
+        <details class="advanced">
+          <summary>报价参数</summary>
+
+          <div class="advanced-content" id="fixedOptions" role="tabpanel" aria-labelledby="fixedTab">
+            <div class="option-row">
+              <div class="option-copy">
+                <strong>代理阶段</strong>
+                <span>曾代理前一阶段的，后一阶段历史口径减半。</span>
+              </div>
+              <select class="compact-select" id="stageFactor">
+                <option value="1">一审／单独阶段</option>
+                <option value="0.5">后续阶段减半</option>
+              </select>
+            </div>
+            <div class="option-row">
+              <div class="option-copy">
+                <strong>重大、疑难、复杂</strong>
+                <span>开启后展示“不高于简单案件 5 倍”的历史上限。</span>
+              </div>
+              <div class="check-wrap">
+                <input class="toggle" id="complexCase" type="checkbox" aria-label="重大疑难复杂案件">
+              </div>
+            </div>
+          </div>
+
+          <div class="advanced-content" id="litigationOptions" role="group" aria-label="诉讼费用参数">
+            <div class="subsection-label">诉讼费用口径</div>
+            <div class="option-row">
+              <div class="option-copy"><strong>金额计算方式</strong><span>可直接填写合计，也可按诉讼请求构成自动汇总。</span></div>
+              <select class="compact-select" id="amountSource" aria-label="金额计算方式">
+                <option value="direct" selected>直接填写诉讼请求合计</option>
+                <option value="components">按请求构成自动汇总</option>
+              </select>
+            </div>
+            <div class="claim-components" id="claimComponents" hidden>
+              <div class="option-row">
+                <div class="option-copy"><strong>本金／主债权</strong><span>不含利息、违约金等附加请求。</span></div>
+                <input class="compact-input" id="claimPrincipal" type="number" min="0" step="0.01" value="0" aria-label="本金或主债权金额">
+              </div>
+              <div class="option-row">
+                <div class="option-copy"><strong>利息／资金占用损失</strong><span>填写起诉时拟主张的金额。</span></div>
+                <input class="compact-input" id="claimInterest" type="number" min="0" step="0.01" value="0" aria-label="利息或资金占用损失金额">
+              </div>
+              <div class="option-row">
+                <div class="option-copy"><strong>违约金／赔偿金</strong><span>按具体请求项目填写，避免重复计算。</span></div>
+                <input class="compact-input" id="claimPenalty" type="number" min="0" step="0.01" value="0" aria-label="违约金或赔偿金金额">
+              </div>
+              <div class="option-row">
+                <div class="option-copy"><strong>其他财产请求</strong><span>填写与本案一并提出的其他金额请求。</span></div>
+                <input class="compact-input" id="claimOther" type="number" min="0" step="0.01" value="0" aria-label="其他财产请求金额">
+              </div>
+            </div>
+            <div class="option-row">
+              <div class="option-copy"><strong>案件类型</strong><span>不同案型不一定适用同一套受理费公式。</span></div>
+              <select class="compact-select" id="caseType" aria-label="案件类型">
+                <option value="property" selected>财产案件（合同、借贷等）</option>
+                <option value="ip">知识产权民事案件（有争议金额）</option>
+                <option value="ipNoAmount">知识产权民事案件（无争议金额）</option>
+                <option value="labor">劳动争议案件（风险代理需核对请求类型）</option>
+                <option value="divorce">离婚案件（含财产分割）</option>
+                <option value="inheritance">继承纠纷（按争议财产额）</option>
+                <option value="personality">人格权案件（含损害赔偿）</option>
+                <option value="nonProperty">其他非财产案件</option>
+                <option value="admin">行政案件（一般）</option>
+                <option value="adminSpecial">行政案件（商标、专利、海事）</option>
+                <option value="stateCompensation">行政赔偿案件（不交案件受理费）</option>
+              </select>
+            </div>
+            <div class="option-row">
+              <div class="option-copy"><strong>诉讼阶段</strong><span>二审按不服一审判决部分的上诉请求金额测算。</span></div>
+              <select class="compact-select" id="litigationStage" aria-label="诉讼阶段">
+                <option value="first" selected>一审</option>
+                <option value="appeal">二审／上诉</option>
+                <option value="retrial">再审（通常不交）</option>
+              </select>
+            </div>
+            <div class="option-row">
+              <div class="option-copy"><strong>程序／结案状态</strong><span>简易程序、调解或撤诉通常按规定减半。</span></div>
+              <select class="compact-select" id="feeScenario" aria-label="程序或结案状态">
+                <option value="ordinary" selected>普通程序／未结案</option>
+                <option value="simple">简易程序</option>
+                <option value="small">小额诉讼（适用简易程序）</option>
+                <option value="mediation">调解结案／撤诉</option>
+              </select>
+            </div>
+            <div class="option-row">
+              <div class="option-copy"><strong>申请财产保全</strong><span>不勾选也会按诉请金额自动试算；勾选后，保全费才计入预计预交合计。</span></div>
+              <div class="check-wrap"><input class="toggle" id="preservation" type="checkbox" aria-label="申请财产保全"></div>
+            </div>
+            <div class="option-row" id="preservationAmountRow">
+              <div class="option-copy"><strong>实际申请保全金额</strong><span>勾选申请后可填写；留空或填 0 时，自动按诉讼请求金额试算。</span></div>
+              <div class="money-input-wrap compact-money">
+                <input class="money-input" id="preservationAmount" type="text" inputmode="decimal" value="0" aria-label="申请保全金额" disabled>
+                <select class="unit-select" id="preserveUnit" aria-label="保全金额单位" disabled>
+                  <option value="1">元</option>
+                  <option value="10000" selected>万元</option>
+                  <option value="100000000">亿元</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="advanced-content" id="riskOptions" role="tabpanel" aria-labelledby="riskTab" hidden>
+            <div class="risk-compliance" id="riskCompliance">正在核对当前案型的风险代理适用范围。</div>
+            <div class="option-row">
+              <div class="option-copy">
+                <strong>预计实现比例</strong>
+                <span>风险代理应按最终实现债权或减免债务金额计费。</span>
+              </div>
+              <div>
+                <input class="compact-input" id="realizationRate" type="number" min="0" max="100" step="1" value="100" aria-label="预计实现比例">
+              </div>
+            </div>
+            <div class="option-row">
+              <div class="option-copy">
+                <strong>内部参考费率</strong>
+                <span>初始值 8%—10% 来自本目录既有报价样本，可修改。</span>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                <input class="compact-input" id="riskMinRate" type="number" min="0" max="100" step="0.1" value="8" aria-label="最低参考费率">
+                <input class="compact-input" id="riskMaxRate" type="number" min="0" max="100" step="0.1" value="10" aria-label="最高参考费率">
+              </div>
+            </div>
+            <div class="option-row">
+              <div class="option-copy">
+                <strong>基础服务费</strong>
+                <span>基础费与风险费合计不得突破现行最高限额。</span>
+              </div>
+              <input class="compact-input" id="baseFee" type="number" min="0" step="1000" value="0" aria-label="基础服务费">
+            </div>
+          </div>
+
+          <div class="advanced-content" id="quoteOptions" role="group" aria-label="报价条款参数">
+            <div class="subsection-label">报价条款口径</div>
+            <div class="option-row">
+              <div class="option-copy"><strong>增值税口径</strong><span>默认按一般计税 6% 生成；实际以开票时税法和本所纳税人身份为准。</span></div>
+              <div class="suffix-input"><input class="compact-input" id="vatRate" type="number" min="0" max="100" step="0.1" value="6" aria-label="增值税税率或征收率"><span>%</span></div>
+            </div>
+            <div class="option-row">
+              <div class="option-copy"><strong>发票类型</strong><span>正式签约前应按客户资质与本所开票规则确认。</span></div>
+              <select class="compact-select" id="invoiceType" aria-label="发票类型">
+                <option value="增值税专用发票" selected>增值税专用发票</option>
+                <option value="增值税普通发票">增值税普通发票</option>
+                <option value="增值税发票">依法开具增值税发票</option>
+              </select>
+            </div>
+          </div>
+        </details>
+
+        <div class="action-row">
+          <button class="action-button primary" id="copyResult">复制报价结果</button>
+          <button class="action-button" id="printResult">打印／存为 PDF</button>
+          <button class="action-button" id="clearAmount">清空金额</button>
+          <button class="action-button" id="resetParams">恢复默认</button>
+        </div>
+      </div>
+
+      <div class="result-panel" aria-live="polite">
+        <div class="result-heading">
+          <div>
+            <p class="result-eyebrow" id="resultEyebrow">Fixed fee · historical reference</p>
+            <h2 class="result-title" id="resultTitle">固定收费参考区间</h2>
+          </div>
+          <span class="source-badge" id="sourceBadge">2017 历史口径</span>
+        </div>
+
+        <div class="result-amount" id="resultAmount">￥47,900 — 65,300</div>
+        <p class="result-caption" id="resultCaption">普通案件、一审或单独代理阶段；采用分档费率累进计算。</p>
+
+        <div class="stat-strip">
+          <div class="stat-item">
+            <span class="stat-label" id="statOneLabel">折合费率</span>
+            <span class="stat-value" id="statOneValue">4.79%—6.53%</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label" id="statTwoLabel">当前所在档</span>
+            <span class="stat-value" id="statTwoValue">50—100 万</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label" id="statThreeLabel">计费方式</span>
+            <span class="stat-value" id="statThreeValue">分档累进</span>
+          </div>
+        </div>
+
+        <div class="result-body">
+          <div class="breakdown-wrap">
+            <h3 class="section-title">分段计算明细</h3>
+            <table class="breakdown-table">
+              <thead>
+                <tr>
+                  <th>计费部分</th>
+                  <th>费率／标准</th>
+                  <th>该段费用</th>
+                </tr>
+              </thead>
+              <tbody id="breakdownBody"></tbody>
+            </table>
+            <h3 class="section-title cost-section-title">诉讼费用参考</h3>
+            <div class="claim-summary" id="claimSummary" hidden>
+              <div class="claim-card"><span>案件受理费（全额基准）</span><strong id="courtFeeFull">—</strong></div>
+              <div class="claim-card"><span>案件受理费（当前状态）</span><strong id="courtFeeSimple">—</strong></div>
+              <div class="claim-card"><span id="preserveFeeLabel">财产保全费</span><strong id="preserveFee">—</strong></div>
+              <div class="claim-card emphasis"><span id="litigationTotalLabel">预计预交费用合计</span><strong id="litigationTotal">—</strong></div>
+            </div>
+            <div class="cost-matrix">
+              <div class="cost-matrix-item"><strong>起诉／申请时</strong><span>案件受理费通常由原告或上诉人预交；保全申请费通常由申请人预交。</span></div>
+              <div class="cost-matrix-item"><strong>结案后</strong><span>诉讼费用通常由败诉方承担，但部分胜败诉、调解、撤诉等由法院依法决定。</span></div>
+            </div>
+            <p class="cost-note" id="costNote">输入诉讼请求金额后，页面自动按该金额试算保全费；只有勾选“申请财产保全”后，保全费才计入预计预交合计。</p>
+            <div class="legal-note" id="legalNote">
+              <strong>适用提醒：</strong> 2017 文件仅对当时列入政府指导价范围的案件规定此表；其他案件当时亦属市场调节价。当前正式报价应以本所备案收费标准及委托合同为准。
+            </div>
+          </div>
+
+          <aside class="rate-ladder" aria-label="分段费率阶梯">
+            <div class="ladder-title">费率阶梯<br>当前档位高亮</div>
+            <div class="ladder-steps" id="ladderSteps"></div>
+          </aside>
+        </div>
+
+        <section class="quote-terms" aria-labelledby="quoteTermsTitle">
+          <div class="quote-terms-head">
+            <div>
+              <h3 class="section-title" id="quoteTermsTitle">报价条款草案</h3>
+              <p class="quote-terms-note">基础代理费和风险代理费率随上方参数实时更新；固定收费显示区间时，请在正式报价前确认最终单一金额。</p>
+            </div>
+            <button class="action-button" id="copyQuoteTerms" type="button">复制条款</button>
+          </div>
+          <textarea class="quote-terms-text" id="quoteTerms" readonly spellcheck="false" aria-label="报价条款草案"></textarea>
+        </section>
+
+        <details class="quote-letter">
+          <summary>报价函条款草案（点击展开）</summary>
+          <div class="quote-letter-body">
+            <div class="quote-letter-fields">
+              <label class="quote-letter-field">收件方／称谓<input id="letterRecipient" type="text" value="XX" placeholder="例如：XX公司"></label>
+              <label class="quote-letter-field">对方或案件主体<input id="letterCounterparty" type="text" value="XXX" placeholder="例如：XXX公司"></label>
+              <label class="quote-letter-field">案由<input id="letterCause" type="text" value="案由" placeholder="例如：买卖合同纠纷"></label>
+              <label class="quote-letter-field">基本代理费覆盖（留空自动带入）<input id="letterBasicFee" type="text" placeholder="留空使用当前报价"></label>
+              <label class="quote-letter-field">固定一审代理费（留空自动带入）<input id="letterFixedFirstFee" type="text" placeholder="留空使用当前报价"></label>
+              <label class="quote-letter-field">固定二审代理费（可选填）<input id="letterAppealFee" type="text" placeholder="填写金额"></label>
+              <label class="quote-letter-field">固定执行代理费（可选填）<input id="letterExecutionFee" type="text" placeholder="填写金额"></label>
+              <fieldset class="quote-letter-choice">
+                <legend>风险代理计费基数</legend>
+                <div class="quote-letter-choice-list">
+                  <label><input type="radio" name="riskBasis" data-kind="judgment" value="原告胜诉金额的"><span><strong>原告胜诉金额的</strong><small>裁判口径；不当然等同于现行收费上限的法定基数。</small></span></label>
+                  <label><input type="radio" name="riskBasis" data-kind="debt" value="原告诉请减少金额的"><span><strong>原告诉请减少金额的</strong><small>通常用于被告方减免债务，请在正式合同中核对当事人角色。</small></span></label>
+                  <label><input type="radio" name="riskBasis" data-kind="receipt" value="对方支付到账金额的">对方支付到账金额的</label>
+                  <label><input type="radio" name="riskBasis" data-kind="receipt" value="实际收回款项（含执行、和解、调解等）的" checked>实际收回款项（含执行、和解、调解等）的</label>
+                  <label><input type="radio" name="riskBasis" data-kind="receipt" value="实际到账金额（回款口径）的"><span><strong>实际到账金额（回款口径）的</strong><small>以款项实际进入委托人账户为基数；坏账清收、执行案件中常用。</small></span></label>
+                  <label><input type="radio" name="riskBasis" data-kind="judgment" value="生效判决／裁决支持金额（裁判口径）的"><span><strong>生效判决／裁决支持金额（裁判口径）的</strong><small>取得胜诉文书即计费；与现行意见的“最终实现债权”口径存在差异，须专项复核。</small></span></label>
+                  <label><input type="radio" name="riskBasis" data-kind="receipt" value="执行到位金额／和解回款金额的"><span><strong>执行到位金额／和解回款金额的</strong><small>按执行程序或和解协议实际履行结果计算；和解打折按实收计算。</small></span></label>
+                  <label><input type="radio" name="riskBasis" data-kind="noncash" value="非货币利益折算金额的"><span><strong>非货币利益折算金额的</strong><small>须明确交付／过户节点、折算方法和上限校验方法，避免估值争议。</small></span></label>
+                  <label><input type="radio" name="riskBasis" data-kind="debt" value="减免债务金额（被告方案件）的"><span><strong>减免债务金额（被告方案件）的</strong><small>按最终实际减免债务金额计费；裁判、调解或和解均应写清确认节点。</small></span></label>
+                </div>
+                <p class="risk-basis-warning" id="riskBasisWarning">现行风险代理最高收费限额按“最终实现的债权或减免的债务金额”分段计算；选择其他合同表述时，仍须以该法定口径复核总额上限。</p>
+              </fieldset>
+            </div>
+            <div class="quote-letter-actions">
+              <span>正文中的金额随报价结果更新；手动填写的覆盖金额不会被自动改写。</span>
+              <button class="action-button" id="copyQuoteLetter" type="button">复制报价函</button>
+            </div>
+            <textarea class="quote-terms-text quote-letter-text" id="quoteLetter" readonly spellcheck="false" aria-label="报价函条款草案"></textarea>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <details class="references">
+      <summary>计算依据与效力说明</summary>
+      <ul>
+        <li><span class="reference-status historical">历史参考</span><a href="https://www.yixing.gov.cn/doc/2017/07/20/645983.shtml" target="_blank" rel="noopener">苏价费〔2017〕113号（宜兴市人民政府公开全文）</a>：固定收费历史分档；文件载明试行期限 2 年，不作为当前政府指导价依据。</li>
+        <li><span class="reference-status">现行</span><a href="https://fzggw.jiangsu.gov.cn/art/2025/4/24/art_84097_11551848.html?type=3" target="_blank" rel="noopener">苏发改收费发〔2025〕381号（江苏省发展改革委、江苏省财政厅）</a>：自2025年4月15日起，江苏省离婚、人格权、其他非财产、无争议金额知识产权案件的省级定额分别为240元、400元、80元、800元。</li>
+        <li><span class="reference-status">现行</span><a href="https://www.court.gov.cn/jianshe/xiangqing/5092.html" target="_blank" rel="noopener">《诉讼费用交纳办法》（最高人民法院）</a>：案件受理费按财产案件标的额分段累计；申请保全费按实际保全财产数额计算，最高不超过5,000元。</li>
+        <li><span class="reference-status">复核表</span><a href="https://www.court.gov.cn/fuwu/xiangqing/78662.html" target="_blank" rel="noopener">最高人民法院诉讼费用速算表</a>：明确2,000万元以上财产案件为“0.5%＋41,800元”。</li>
+        <li><span class="reference-status">现行</span><a href="https://flk.npc.gov.cn/detail?title=%E4%B8%AD%E5%8D%8E%E4%BA%BA%E6%B0%91%E5%85%B1%E5%92%8C%E5%9B%BD%E6%B0%91%E4%BA%8B%E8%AF%89%E8%AE%BC%E6%B3%95&amp;id=ff8081818a21dc13018b425303b7086d" target="_blank" rel="noopener">《中华人民共和国民事诉讼法》（2023年修正，国家法律法规数据库直达页）</a>、<a href="https://www.court.gov.cn/fabu/xiangqing/353651.html" target="_blank" rel="noopener">《民事诉讼法解释》（2022年修正，最高人民法院全文）</a>：用于判断程序与案型，不替代缴费标准。</li>
+        <li><span class="reference-status">现行</span><a href="https://www.gov.cn/zhengce/zhengceku/2022-03/25/content_5681313.htm" target="_blank" rel="noopener">司发通〔2021〕87号（中国政府网）</a>：风险代理禁止范围；收费上限以最终实现债权或减免债务金额为基数，按18%／15%／12%／9%／6%分段累计。</li>
+        <li><span class="reference-status internal">内部合规</span><a href="https://www.wxla.org.cn/notice/detail/6694" target="_blank" rel="noopener">无锡市律师协会2025年律师执业风险提示</a>：现行律师服务收费按市场调节价，不得再把2017试行标准写成政府指导价或收费依据。</li>
+        <li><span class="reference-status">现行税法</span><a href="https://fgk.chinatax.gov.cn/zcfgk/c100009/c5237365/content.html" target="_blank" rel="noopener">《中华人民共和国增值税法》（国家税务总局政策法规库）</a>：2026年1月1日起施行；一般纳税人销售一般服务通常适用6%税率，简易计税等情形须按实际税务口径处理。</li>
+        <li>本页法源链接核验日期：2026-09-20。历史律师费参考、现行市场调节价、法院诉讼费用及税务口径已分层标示；最终收费和法院缴费仍以正式合同、法院通知及实际开票规则为准。</li>
+      </ul>
+    </details>
+  </main>
+
+  <div class="toast" id="toast" role="status">已复制报价结果</div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const FIXED_TIERS = [
+        { lower: 10000, upper: 100000, min: 0.06, max: 0.07, label: "1—10 万" },
+        { lower: 100000, upper: 500000, min: 0.05, max: 0.06, label: "10—50 万" },
+        { lower: 500000, upper: 1000000, min: 0.04, max: 0.05, label: "50—100 万" },
+        { lower: 1000000, upper: 5000000, min: 0.03, max: 0.04, label: "100—500 万" },
+        { lower: 5000000, upper: 10000000, min: 0.02, max: 0.03, label: "500—1000 万" },
+        { lower: 10000000, upper: 100000000, min: 0.01, max: 0.02, label: "1000 万—1 亿" },
+        { lower: 100000000, upper: Infinity, min: 0.005, max: 0.01, label: "1 亿以上" }
+      ];
+
+      const RISK_TIERS = [
+        { lower: 0, upper: 1000000, rate: 0.18, label: "100 万以下" },
+        { lower: 1000000, upper: 5000000, rate: 0.15, label: "100—500 万" },
+        { lower: 5000000, upper: 10000000, rate: 0.12, label: "500—1000 万" },
+        { lower: 10000000, upper: 50000000, rate: 0.09, label: "1000—5000 万" },
+        { lower: 50000000, upper: Infinity, rate: 0.06, label: "5000 万以上" }
+      ];
+
+      const $ = (id) => document.getElementById(id);
+      const state = { mode: "fixed", last: null };
+      const AMOUNT_OPTIONAL_CASES = new Set(["ipNoAmount", "labor", "divorce", "personality", "nonProperty", "admin", "adminSpecial", "stateCompensation"]);
+
+      const elements = {
+        amount: $("amount"), unit: $("unit"), amountHelp: $("amountHelp"), amountLabel: $("amountLabel"),
+        fixedOptions: $("fixedOptions"), riskOptions: $("riskOptions"), modeContext: $("modeContext"),
+        stageFactor: $("stageFactor"), complexCase: $("complexCase"), realizationRate: $("realizationRate"),
+        riskMinRate: $("riskMinRate"), riskMaxRate: $("riskMaxRate"), baseFee: $("baseFee"),
+        riskCompliance: $("riskCompliance"), vatRate: $("vatRate"), invoiceType: $("invoiceType"),
+        caseType: $("caseType"), litigationStage: $("litigationStage"), feeScenario: $("feeScenario"),
+        amountSource: $("amountSource"), claimComponents: $("claimComponents"), claimPrincipal: $("claimPrincipal"),
+        claimInterest: $("claimInterest"), claimPenalty: $("claimPenalty"), claimOther: $("claimOther"),
+        preservation: $("preservation"), preservationAmount: $("preservationAmount"), preserveUnit: $("preserveUnit"),
+        resultEyebrow: $("resultEyebrow"), resultTitle: $("resultTitle"), sourceBadge: $("sourceBadge"),
+        resultAmount: $("resultAmount"), resultCaption: $("resultCaption"), breakdownBody: $("breakdownBody"),
+        ladderSteps: $("ladderSteps"), legalNote: $("legalNote"), costNote: $("costNote"),
+        preserveFeeLabel: $("preserveFeeLabel"), litigationTotalLabel: $("litigationTotalLabel"),
+        quoteTerms: $("quoteTerms"), quoteLetter: $("quoteLetter"), letterRecipient: $("letterRecipient"),
+        letterCounterparty: $("letterCounterparty"), letterCause: $("letterCause"), letterBasicFee: $("letterBasicFee"),
+        letterFixedFirstFee: $("letterFixedFirstFee"), letterAppealFee: $("letterAppealFee"),
+        letterExecutionFee: $("letterExecutionFee"), riskBasisWarning: $("riskBasisWarning"), toast: $("toast")
+      };
+      function propertyCourtFee(amount) {
+        if (amount <= 10000) return amount > 0 ? 50 : 0;
+        if (amount <= 100000) return amount * .025 - 200;
+        if (amount <= 200000) return amount * .02 + 300;
+        if (amount <= 500000) return amount * .015 + 1300;
+        if (amount <= 1000000) return amount * .01 + 3800;
+        if (amount <= 2000000) return amount * .009 + 4800;
+        if (amount <= 5000000) return amount * .008 + 6800;
+        if (amount <= 10000000) return amount * .007 + 11800;
+        if (amount <= 20000000) return amount * .006 + 21800;
+        return amount * .005 + 41800;
+      }
+      function preservationFee(amount) {
+        if (amount <= 1000) return 30;
+        return Math.min(5000, amount <= 100000 ? amount * .01 + 20 : amount * .005 + 520);
+      }
+      function parseMoneyField(inputId, unitId) {
+        const normalized = String($(inputId).value).replace(/[,，\s￥¥]/g, "");
+        const value = Number.parseFloat(normalized);
+        if (!Number.isFinite(value) || value < 0) return 0;
+        return value * Number($(unitId).value);
+      }
+      function claimComponentTotal() {
+        return [elements.claimPrincipal, elements.claimInterest, elements.claimPenalty, elements.claimOther]
+          .reduce((total, input) => total + Math.max(0, Number(input.value) || 0), 0);
+      }
+      function refreshAmountSource() {
+        const useComponents = elements.amountSource.value === "components";
+        elements.claimComponents.hidden = !useComponents;
+        elements.amount.disabled = useComponents;
+        elements.unit.disabled = useComponents;
+      }
+      function feeRange(low, high, decimals = 2) {
+        if (!Number.isFinite(low) || !Number.isFinite(high)) return "—";
+        return Math.abs(low - high) < 0.005
+          ? formatMoney(low, decimals)
+          : `${formatMoney(low, decimals)} — ${formatMoney(high, decimals).replace("￥", "")}`;
+      }
+      function calculateCaseAcceptanceFee(amount) {
+        const type = elements.caseType.value;
+        if (elements.litigationStage.value === "retrial") {
+          return { low: 0, high: 0, text: "通常不交", note: "审判监督程序通常不交纳案件受理费；法定例外需另行核对。" };
+        }
+        if (type === "ipNoAmount") return { low: 800, high: 800, text: "￥800.00", note: "江苏省无争议金额或者价额的知识产权民事案件现行定额为每件800元。" };
+        if (type === "labor") return { low: 10, high: 10, text: "￥10.00", note: "劳动争议案件按每件10元测算。" };
+        if (type === "admin") return { low: 50, high: 50, text: "￥50.00", note: "一般行政案件按每件标准测算。" };
+        if (type === "adminSpecial") return { low: 100, high: 100, text: "￥100.00", note: "商标、专利、海事行政案件按每件标准测算。" };
+        if (type === "stateCompensation") return { low: 0, high: 0, text: "不交", note: "行政赔偿案件依法不交纳案件受理费。" };
+        if (type === "nonProperty") return { low: 80, high: 80, text: "￥80.00", note: "江苏省其他非财产案件现行定额为每件80元。" };
+        if (type === "divorce") {
+          const propertyPart = Math.max(0, amount - 200000) * .005;
+          return { low: 240 + propertyPart, high: 240 + propertyPart, text: feeRange(240 + propertyPart, 240 + propertyPart), note: "江苏省离婚案件现行基础定额为每件240元；财产分割超过20万元的部分另按0.5%测算。" };
+        }
+        if (type === "personality") {
+          const damagePart = Math.max(0, amount - 50000) <= 50000
+            ? Math.max(0, amount - 50000) * .01
+            : 500 + (amount - 100000) * .005;
+          return { low: 400 + damagePart, high: 400 + damagePart, text: feeRange(400 + damagePart, 400 + damagePart), note: "江苏省人格权案件现行基础定额为每件400元；损害赔偿部分按全国分段规则测算。" };
+        }
+        if (type === "inheritance") {
+          const fee = propertyCourtFee(amount);
+          return { low: fee, high: fee, text: formatMoney(fee, 2), note: "继承纠纷按争议遗产的金额或者价额适用财产案件分段标准。" };
+        }
+        const fee = propertyCourtFee(amount);
+        return { low: fee, high: fee, text: formatMoney(fee, 2), note: "财产案件按诉讼请求金额分段累计。" };
+      }
+      function litigationResult() {
+        const amount = parseAmount();
+        const base = calculateCaseAcceptanceFee(amount);
+        const reduced = elements.feeScenario.value !== "ordinary" && elements.litigationStage.value !== "retrial";
+        const currentLow = reduced ? base.low / 2 : base.low;
+        const currentHigh = reduced ? base.high / 2 : base.high;
+        const enteredPreserveAmount = parseMoneyField("preservationAmount", "preserveUnit");
+        const preserveEnabled = elements.preservation.checked;
+        const preserveAuto = enteredPreserveAmount <= 0 && amount > 0;
+        const preserveAmount = preserveAuto ? amount : enteredPreserveAmount;
+        const preserveNoAmount = preserveEnabled && preserveAmount <= 0;
+        const preserve = preserveAmount > 0 ? preservationFee(preserveAmount) : preserveNoAmount ? preservationFee(0) : 0;
+        return { amount, base, reduced, currentLow, currentHigh, enteredPreserveAmount, preserveAmount, preserveAuto, preserveNoAmount, preserveEnabled, preserve };
+      }
+      function renderClaimCosts() {
+        const box = $("claimSummary");
+        const result = litigationResult();
+        elements.preservationAmount.disabled = !result.preserveEnabled;
+        elements.preserveUnit.disabled = !result.preserveEnabled;
+        const amount = result.amount;
+        box.hidden = amount <= 0 && !AMOUNT_OPTIONAL_CASES.has(elements.caseType.value);
+        if (box.hidden) return;
+        $("courtFeeFull").textContent = result.base.text || feeRange(result.base.low, result.base.high);
+        $("courtFeeSimple").textContent = ["通常不交", "不交"].includes(result.base.text) ? result.base.text : feeRange(result.currentLow, result.currentHigh);
+        elements.preserveFeeLabel.textContent = "财产保全费";
+        elements.litigationTotalLabel.textContent = result.preserveEnabled ? "预计预交费用合计" : "案件受理费预交合计（未含保全）";
+        $("preserveFee").textContent = result.preserveAmount > 0 || result.preserveNoAmount
+          ? formatMoney(result.preserve, 2)
+          : "—";
+        $("litigationTotal").textContent = feeRange(result.currentLow + (result.preserveEnabled ? result.preserve : 0), result.currentHigh + (result.preserveEnabled ? result.preserve : 0));
+        const preserveText = result.preserveAmount > 0
+          ? `${result.preserveAuto ? "以诉请金额" : "以实际保全金额"} ${formatPlainMoney(result.preserveAmount)} 为计算基数，保全申请费为 ${formatMoney(result.preserve, 2)}`
+          : result.preserveNoAmount ? `按“不涉及财产数额”口径计算保全申请费 ${formatMoney(result.preserve, 2)}` : "未勾选申请保全且无可供自动计算的金额，保全费未计入合计";
+        const mismatch = result.preserveAmount > amount && amount > 0 ? "保全金额高于诉讼请求金额，请核对。" : "";
+        elements.costNote.textContent = `${result.base.note}${result.reduced ? "当前程序／结案状态按减半参考。" : "当前按全额基准。"}${preserveText}。计算公式：不超过1000元或者不涉及财产数额，每件30元；超过1000元至10万元的部分按1%；超过10万元的部分按0.5%；最高5000元。${mismatch}合计仅含案件受理费和已勾选的财产保全申请费，不含保全担保、保险、鉴定、评估、公告等费用；最终以法院缴费通知和裁判确定为准。`;
+      }
+
+      function renderQuoteTerms() {
+        const amount = state.last ? state.last.amount : parseAmount();
+        let baseText = "待填写";
+        let baseUpper = "待填写";
+        if (state.mode === "risk") {
+          const baseFee = Math.max(0, Number(elements.baseFee.value) || 0);
+          baseText = quoteMoney(baseFee);
+          baseUpper = chineseRmb(baseFee);
+        } else if (state.last && (amount > 0 || AMOUNT_OPTIONAL_CASES.has(elements.caseType.value))) {
+          baseText = quoteMoneyRange(state.last.minimum, state.last.maximum);
+          baseUpper = Math.abs(state.last.minimum - state.last.maximum) < 0.005
+            ? chineseRmb(state.last.minimum)
+            : "以最终确认金额为准";
+        }
+        let riskMin = Math.max(0, Number(elements.riskMinRate.value) || 0);
+        let riskMax = Math.max(0, Number(elements.riskMaxRate.value) || 0);
+        if (riskMin > riskMax) [riskMin, riskMax] = [riskMax, riskMin];
+        const riskRate = Math.abs(riskMin - riskMax) < 0.005
+          ? riskMin.toLocaleString("zh-CN", { maximumFractionDigits: 2 })
+          : `${riskMin.toLocaleString("zh-CN", { maximumFractionDigits: 2 })}—${riskMax.toLocaleString("zh-CN", { maximumFractionDigits: 2 })}`;
+        const eligibility = riskEligibility();
+        const riskClause = eligibility.blocked
+          ? `2、风险代理费：当前案件类型属于禁止实行或者变相实行风险代理的范围，不生成风险代理收费条款。`
+          : `2、风险代理费：${selectedRiskBasis()}【${riskRate}】%。${riskPaymentClause()}风险代理各环节收取的基础服务费、风险代理费等服务费合计，不得超过按委托人最终实现债权或减免债务金额分段计算的现行最高限额。`;
+        elements.quoteTerms.value = `1、基础代理费：法律服务合同签订之日起7日内，支付基础代理费【${baseText}】元（大写：${baseUpper}）。合同签订后，无论本案出现任何结果，甲方均应支付该基础代理费，乙方亦无须退还。
+
+${riskClause}
+
+${taxInvoiceClause()}`;
+      }
+
+      function letterInputValue(input, fallback) {
+        const value = String(input.value || "").trim();
+        return value || fallback;
+      }
+
+      function letterFeePair(value) {
+        const uncertain = value === "待填写" || value.includes("—");
+        const unit = uncertain ? "元" : "元整";
+        return `【${value}】${unit}（小写：【${value}】元）`;
+      }
+
+      function selectedRiskBasis() {
+        return document.querySelector('input[name="riskBasis"]:checked')?.value || "实际收回款项（含执行、和解、调解等）的";
+      }
+
+      function selectedRiskBasisKind() {
+        return document.querySelector('input[name="riskBasis"]:checked')?.dataset.kind || "receipt";
+      }
+
+      function riskPaymentClause() {
+        const basis = selectedRiskBasis();
+        const kind = selectedRiskBasisKind();
+        if (kind === "judgment") return `甲方应在相关生效判决或裁决送达后【7】日内，按照${basis.replace(/的$/, "")}结算并支付风险代理费。`;
+        if (kind === "debt") return `甲方应在生效裁判、已履行的调解／和解协议或债权人书面确认减免后【7】日内，按照${basis.replace(/的$/, "")}结算并支付风险代理费。`;
+        if (kind === "noncash") return `甲方应在非货币利益完成交付、过户或权属变更且折算金额确定后【7】日内，按照${basis.replace(/的$/, "")}结算并支付风险代理费。`;
+        return `甲方应在相关款项实际到账后【7】日内，按照${basis.replace(/的$/, "")}结算并支付风险代理费。`;
+      }
+
+      function taxInvoiceClause() {
+        const rate = Math.min(100, Math.max(0, Number(elements.vatRate.value) || 0));
+        const rateText = rate.toLocaleString("zh-CN", { maximumFractionDigits: 2 });
+        return `以上报价为含税价，当前按增值税【${rateText}%】口径生成；实际适用税率或征收率以开票时税法及乙方纳税人身份为准。乙方依法开具${elements.invoiceType.value}给甲方作为付款凭证。`;
+      }
+
+      function renderQuoteLetter() {
+        const amount = state.last ? state.last.amount : parseAmount();
+        const fixedAuto = state.mode === "fixed" && state.last && (amount > 0 || AMOUNT_OPTIONAL_CASES.has(elements.caseType.value))
+          ? quoteMoneyRange(state.last.minimum, state.last.maximum)
+          : "待填写";
+        const baseFee = Math.max(0, Number(elements.baseFee.value) || 0);
+        const basicAuto = state.mode === "risk" && baseFee > 0 ? quoteMoney(baseFee) : fixedAuto;
+        const basicFee = letterInputValue(elements.letterBasicFee, basicAuto);
+        const fixedFirstFee = letterInputValue(elements.letterFixedFirstFee, fixedAuto);
+        const appealFee = letterInputValue(elements.letterAppealFee, "待填写");
+        const executionFee = letterInputValue(elements.letterExecutionFee, "待填写");
+        let riskMin = Math.max(0, Number(elements.riskMinRate.value) || 0);
+        let riskMax = Math.max(0, Number(elements.riskMaxRate.value) || 0);
+        if (riskMin > riskMax) [riskMin, riskMax] = [riskMax, riskMin];
+        const riskRate = Math.abs(riskMin - riskMax) < 0.005
+          ? riskMin.toLocaleString("zh-CN", { maximumFractionDigits: 2 })
+          : `${riskMin.toLocaleString("zh-CN", { maximumFractionDigits: 2 })}—${riskMax.toLocaleString("zh-CN", { maximumFractionDigits: 2 })}`;
+        const recipient = letterInputValue(elements.letterRecipient, "XX");
+        const counterparty = letterInputValue(elements.letterCounterparty, "XXX");
+        const cause = letterInputValue(elements.letterCause, "案由");
+        const eligibility = riskEligibility();
+        const riskPlan = eligibility.blocked
+          ? "1、风险代理方案：当前案件类型属于禁止实行或者变相实行风险代理的范围，本所不提供风险代理方案。"
+          : `1、采取基本代理费加风险代理费的方式：对于本案的一审及二审阶段（如有），本所收取人民币${letterFeePair(basicFee)}基本代理费，再按照${selectedRiskBasis()}【${riskRate}】%收取风险代理费。${riskPaymentClause()}风险代理各环节收取的服务费合计，不得超过按委托人最终实现债权或减免债务金额分段计算的现行最高限额。`;
+        elements.quoteLetter.value = `【封面】
+
+【${recipient}】：
+
+        非常感谢贵司考虑委托本所提供贵司与【${counterparty}】「${cause}」案件代理法律服务的机会。根据贵司的需求，现介绍本所的服务内容、报价如下：
+
+一、诉讼服务内容
+
+- 全面研究案情、梳理证据、确定诉讼策略；
+- 参加开庭审理、发表代理意见；
+- 代表公司进行专业沟通，发表法律意见；
+- 代为承认、放弃和变更诉讼请求、提起诉讼、反诉或上诉，进行和解或调解；
+- 签署法律文书；
+- 答复与案件有关的相关法律咨询。
+
+二、诉讼服务报价
+
+       本次诉讼服务，本所提供两种报价方案，贵司可从其中选择一种：
+
+       ${riskPlan}
+
+       2、采取固定代理费的方式：对于本案一审阶段，本所收取人民币${letterFeePair(fixedFirstFee)}代理费；如案件进入二审阶段，本所另行收取人民币${letterFeePair(appealFee)}代理费；如案件进入执行阶段，本所另行收取人民币${letterFeePair(executionFee)}代理费。
+
+      上述报价未包括：（1）赴外地（办案所在城市以外）服务所发生的律师差旅费用和本所处理法律事务过程中代贵司支付的其他部门收取的费用；（2）其他未包含于本方案服务内容的费用。
+
+      ${taxInvoiceClause()}
+
+       希望以上介绍有助于贵司决策。如贵司有任何问题或意见，请随时与我们联系。
+
+顺颂商祺！
+
+【落款】`;
+      }
+
+      function parseAmount() {
+        if (elements.amountSource.value === "components") return claimComponentTotal();
+        const normalized = String(elements.amount.value).replace(/[,，\s￥¥]/g, "");
+        const value = Number.parseFloat(normalized);
+        if (!Number.isFinite(value) || value < 0) return 0;
+        return value * Number(elements.unit.value);
+      }
+
+      function formatMoney(value, decimals = 0) {
+        const safe = Number.isFinite(value) ? Math.max(0, value) : 0;
+        return `￥${safe.toLocaleString("zh-CN", {
+          minimumFractionDigits: decimals,
+          maximumFractionDigits: decimals
+        })}`;
+      }
+
+      function formatPlainMoney(value) {
+        return `${Math.round(value).toLocaleString("zh-CN")} 元`;
+      }
+
+      function quoteMoney(value) {
+        if (!Number.isFinite(value) || value <= 0) return "待填写";
+        const decimals = Math.abs(value - Math.round(value)) < 0.005 ? 0 : 2;
+        return Number(value).toLocaleString("zh-CN", {
+          minimumFractionDigits: decimals,
+          maximumFractionDigits: decimals
+        });
+      }
+
+      function quoteMoneyRange(low, high) {
+        if (!Number.isFinite(low) || !Number.isFinite(high) || high <= 0) return "待填写";
+        return Math.abs(low - high) < 0.005 ? quoteMoney(low) : `${quoteMoney(low)}—${quoteMoney(high)}`;
+      }
+
+      function chineseSection(value) {
+        const digits = "零壹贰叁肆伍陆柒捌玖";
+        const units = ["仟", "佰", "拾", ""];
+        const chars = String(value).padStart(4, "0").split("").map(Number);
+        let result = "";
+        let zeroPending = false;
+        chars.forEach((digit, index) => {
+          if (digit === 0) {
+            if (result) zeroPending = true;
+            return;
+          }
+          if (zeroPending) result += "零";
+          result += digits[digit] + units[index];
+          zeroPending = false;
+        });
+        return result;
+      }
+
+      function chineseInteger(value) {
+        const groups = [];
+        let rest = Math.floor(Math.abs(value));
+        while (rest > 0) {
+          groups.unshift(rest % 10000);
+          rest = Math.floor(rest / 10000);
+        }
+        if (!groups.length) return "零";
+        const bigUnits = ["", "万", "亿", "兆"];
+        let result = "";
+        let zeroBetween = false;
+        groups.forEach((group, index) => {
+          const unitIndex = groups.length - index - 1;
+          if (group === 0) {
+            zeroBetween = Boolean(result);
+            return;
+          }
+          if (result && (zeroBetween || group < 1000)) result += "零";
+          result += chineseSection(group) + (bigUnits[unitIndex] || "");
+          zeroBetween = false;
+        });
+        return result;
+      }
+
+      function chineseRmb(value) {
+        if (!Number.isFinite(value) || value <= 0) return "待填写";
+        const cents = Math.round(value * 100);
+        const yuan = Math.floor(cents / 100);
+        const jiao = Math.floor(cents % 100 / 10);
+        const fen = cents % 10;
+        const digits = "零壹贰叁肆伍陆柒捌玖";
+        let result = `${chineseInteger(yuan)}元`;
+        if (jiao === 0 && fen === 0) return `${result}整`;
+        if (jiao > 0) result += `${digits[jiao]}角`;
+        if (fen > 0) result += `${jiao === 0 ? "零" : ""}${digits[fen]}分`;
+        return result;
+      }
+
+      function formatPercent(value, digits = 2) {
+        if (!Number.isFinite(value)) return "—";
+        return `${(value * 100).toFixed(digits).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1")}%`;
+      }
+
+      function compactAmount(value) {
+        if (value >= 100000000) return `${(value / 100000000).toFixed(value % 100000000 ? 2 : 0)} 亿`;
+        if (value >= 10000) return `${(value / 10000).toFixed(value % 10000 ? 2 : 0)} 万`;
+        return `${Math.round(value)} 元`;
+      }
+
+      function currentTierLabel(amount, tiers) {
+        if (amount <= 0) return "—";
+        const tier = tiers.find((item) => amount > item.lower && amount <= item.upper)
+          || tiers.find((item) => amount <= item.upper)
+          || tiers[tiers.length - 1];
+        return tier.label;
+      }
+
+      function calculateFixed(amount) {
+        const factor = Number(elements.stageFactor.value);
+        const complex = elements.complexCase.checked;
+        const rows = [];
+        let minimum = 0;
+        let maximum = 0;
+        const amountOptional = AMOUNT_OPTIONAL_CASES.has(elements.caseType.value);
+
+        if (amount > 0 || amountOptional) {
+          minimum = 2500;
+          maximum = 10000;
+          rows.push({
+            label: amount > 0 ? "首 1 万元部分" : "不涉及财产（按件）",
+            standard: "￥2,500—10,000",
+            fee: "￥2,500—10,000",
+            active: amount <= 10000
+          });
+        }
+
+        for (const tier of FIXED_TIERS) {
+          const portion = Math.max(0, Math.min(amount, tier.upper) - tier.lower);
+          if (portion <= 0) continue;
+          const low = portion * tier.min;
+          const high = portion * tier.max;
+          minimum += low;
+          maximum += high;
+          rows.push({
+            label: `${compactAmount(portion)}（${tier.label}档）`,
+            standard: `${formatPercent(tier.min, 1)}—${formatPercent(tier.max, 1)}`,
+            fee: `${formatMoney(low)}—${formatMoney(high).replace("￥", "")}`,
+            active: amount > tier.lower && amount <= tier.upper
+          });
+        }
+
+        minimum *= factor;
+        maximum *= factor * (complex ? 5 : 1);
+        return { minimum, maximum, rows, factor, complex };
+      }
+
+      function calculateRiskCap(amount) {
+        let cap = 0;
+        const rows = [];
+        for (const tier of RISK_TIERS) {
+          const portion = Math.max(0, Math.min(amount, tier.upper) - tier.lower);
+          if (portion <= 0) continue;
+          const fee = portion * tier.rate;
+          cap += fee;
+          rows.push({
+            label: `${compactAmount(portion)}（${tier.label}档）`,
+            standard: `≤ ${formatPercent(tier.rate, 0)}`,
+            fee: formatMoney(fee),
+            active: amount > tier.lower && amount <= tier.upper
+          });
+        }
+        return { cap, rows };
+      }
+
+      function setStats(oneLabel, oneValue, twoLabel, twoValue, threeLabel, threeValue) {
+        $("statOneLabel").textContent = oneLabel;
+        $("statOneValue").textContent = oneValue;
+        $("statTwoLabel").textContent = twoLabel;
+        $("statTwoValue").textContent = twoValue;
+        $("statThreeLabel").textContent = threeLabel;
+        $("statThreeValue").textContent = threeValue;
+      }
+
+      function renderRows(rows) {
+        elements.breakdownBody.replaceChildren();
+        if (!rows.length) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = '<td colspan="3" style="text-align:center;color:#7a888f;padding:22px 8px">请输入大于 0 的金额</td>';
+          elements.breakdownBody.appendChild(tr);
+          return;
+        }
+        for (const row of rows) {
+          const tr = document.createElement("tr");
+          if (row.active) tr.className = "active";
+          for (const value of [row.label, row.standard, row.fee]) {
+            const td = document.createElement("td");
+            td.textContent = value;
+            tr.appendChild(td);
+          }
+          elements.breakdownBody.appendChild(tr);
+        }
+      }
+
+      function renderLadder(tiers, amount, kind) {
+        elements.ladderSteps.replaceChildren();
+        tiers.slice().reverse().forEach((tier, index, reversed) => {
+          const originalIndex = reversed.length - 1 - index;
+          const active = amount > tier.lower && amount <= tier.upper;
+          const step = document.createElement("div");
+          step.className = `ladder-step${active ? " active" : ""}`;
+          const rateText = kind === "fixed"
+            ? `${formatPercent(tier.min, 1)}—${formatPercent(tier.max, 1)}`
+            : `≤ ${formatPercent(tier.rate, 0)}`;
+          const width = kind === "fixed" ? 52 + originalIndex * 7 : 54 + originalIndex * 10;
+          step.innerHTML = `<span>${rateText}</span><span class="ladder-bar" style="width:${Math.min(width, 100)}%"></span><span>${tier.label}</span>`;
+          elements.ladderSteps.appendChild(step);
+        });
+      }
+
+      function renderFixed(amount) {
+        const result = calculateFixed(amount);
+        const amountOptional = AMOUNT_OPTIONAL_CASES.has(elements.caseType.value);
+        const noReference = amount <= 0 && !amountOptional;
+        elements.resultEyebrow.textContent = "Fixed fee · historical reference";
+        elements.resultTitle.textContent = "固定收费参考区间";
+        elements.sourceBadge.textContent = "2017 历史口径";
+        elements.resultAmount.textContent = noReference ? "￥—" : `${formatMoney(result.minimum)} — ${formatMoney(result.maximum).replace("￥", "")}`;
+        const stageText = result.factor === 0.5 ? "曾代理前一阶段、后续阶段减半" : "一审或单独代理阶段";
+        const complexText = result.complex ? "；重大疑难复杂上限按简单案件 5 倍展示" : "；普通案件";
+        const methodText = amount > 0 ? "采用分档费率累进计算" : amountOptional ? "按不涉及财产案件的历史计件区间展示" : "请输入金额";
+        elements.resultCaption.textContent = `${stageText}${complexText}，${methodText}。`;
+
+        setStats(
+          "折合费率",
+          amount <= 0 ? amountOptional ? "按件" : "—" : `${formatPercent(result.minimum / amount)}—${formatPercent(result.maximum / amount)}`,
+          "当前所在档",
+          amount <= 0 && amountOptional ? "不涉及财产" : amount <= 10000 && amount > 0 ? "1 万元以内" : currentTierLabel(amount, FIXED_TIERS),
+          "计费方式",
+          amount > 0 ? "分档累进" : amountOptional ? "按件参考" : "—"
+        );
+
+        renderRows(result.rows);
+        renderLadder(FIXED_TIERS, amount, "fixed");
+        const monetaryCase = ["property", "ip", "inheritance"].includes(elements.caseType.value);
+        elements.legalNote.innerHTML = `<strong>适用提醒：</strong> ${monetaryCase ? "2017 文件仅对当时列入政府指导价范围的案件规定此表；其他案件当时亦属市场调节价。" : "当前案型的诉讼费已按对应案型口径单独测算；律师费分档区间仍是涉及财产案件的历史参考，非财产案件需另行报价。"}当前正式报价应以本所备案收费标准及委托合同为准。`;
+        state.last = { mode: "固定收费", amount, minimum: result.minimum, maximum: result.maximum, caption: elements.resultCaption.textContent };
+      }
+
+      function riskEligibility() {
+        const type = elements.caseType.value;
+        const blocked = {
+          divorce: "婚姻案件禁止实行或者变相实行风险代理。",
+          inheritance: "继承案件禁止实行或者变相实行风险代理。",
+          admin: "行政诉讼案件禁止实行或者变相实行风险代理。",
+          adminSpecial: "行政诉讼案件禁止实行或者变相实行风险代理。",
+          stateCompensation: "国家赔偿案件以及行政诉讼案件禁止实行或者变相实行风险代理。"
+        };
+        if (blocked[type]) return { blocked: true, review: false, message: blocked[type] };
+        if (type === "labor") {
+          return { blocked: false, review: true, message: "劳动争议须先核对具体请求：劳动报酬、工伤赔偿、社会保险待遇、最低生活保障等案件禁止风险代理；其他劳动争议仍应由本所合规审查。" };
+        }
+        if (["ipNoAmount", "nonProperty"].includes(type)) {
+          return { blocked: false, review: true, message: "当前案型可能没有可直接确认的“最终实现债权／减免债务”金额，风险收费基数和最高限额需专项复核。" };
+        }
+        return { blocked: false, review: false, message: "当前案型未被自动识别为明确禁用项；仍须人工核对是否属于刑事、群体性、婚姻继承、国家赔偿或特定民生请求等禁止范围。" };
+      }
+
+      function renderRiskCompliance(eligibility = riskEligibility()) {
+        elements.riskCompliance.className = `risk-compliance${eligibility.blocked ? " blocked" : eligibility.review ? " review" : ""}`;
+        elements.riskCompliance.textContent = `${eligibility.blocked ? "禁止使用" : eligibility.review ? "需要专项复核" : "仍需人工核对"}：${eligibility.message}`;
+        const kind = selectedRiskBasisKind();
+        const basisWarnings = {
+          judgment: "裁判支持金额不是司发通〔2021〕87号规定的最高限额基数；即使合同采用该表述，仍须按最终实现债权或减免债务金额复核收费总额。",
+          noncash: "非货币利益折算不属于文件直接列明的计费表述，合同必须明确交付／过户节点、折算方法，并按现行法定基数审查上限。",
+          debt: "被告方可按最终实际减免债务金额计费；应写清基准诉请、确认节点以及调解、和解情形。",
+          receipt: "到账／实收口径与“最终实现债权”最接近；仍应写清回款范围、税费扣除、第三方代收及非现金清偿规则。"
+        };
+        elements.riskBasisWarning.textContent = basisWarnings[kind];
+      }
+
+      function renderRisk(amount) {
+        const eligibility = riskEligibility();
+        renderRiskCompliance(eligibility);
+        const realization = Math.min(100, Math.max(0, Number(elements.realizationRate.value) || 0)) / 100;
+        let minRate = Math.max(0, Number(elements.riskMinRate.value) || 0) / 100;
+        let maxRate = Math.max(0, Number(elements.riskMaxRate.value) || 0) / 100;
+        if (minRate > maxRate) [minRate, maxRate] = [maxRate, minRate];
+        const baseFee = Math.max(0, Number(elements.baseFee.value) || 0);
+        const realizedAmount = amount * realization;
+        if (eligibility.blocked) {
+          elements.resultEyebrow.textContent = "Contingency fee · prohibited matter";
+          elements.resultTitle.textContent = "风险代理不可用";
+          elements.sourceBadge.textContent = "法定禁止范围";
+          elements.resultAmount.textContent = "￥—";
+          elements.resultCaption.textContent = eligibility.message;
+          setStats("合规结论", "禁止", "案件类型", elements.caseType.options[elements.caseType.selectedIndex].text, "处理方式", "改用固定收费");
+          renderRows([{ label: "当前案型", standard: "禁止风险代理", fee: "—", active: true }]);
+          renderLadder(RISK_TIERS, 0, "risk");
+          elements.legalNote.innerHTML = `<strong>禁止使用：</strong> ${eligibility.message}页面已停止生成风险代理金额，报价条款同步改为固定收费提示。`;
+          state.last = { mode: "风险代理", amount, realizedAmount: 0, minimum: 0, maximum: 0, cap: 0, blocked: true, caption: elements.resultCaption.textContent };
+          return;
+        }
+        const capResult = calculateRiskCap(realizedAmount);
+        const rawMinimum = baseFee + realizedAmount * minRate;
+        const rawMaximum = baseFee + realizedAmount * maxRate;
+        const minimum = Math.min(rawMinimum, capResult.cap);
+        const maximum = Math.min(rawMaximum, capResult.cap);
+        const capped = rawMinimum > capResult.cap || rawMaximum > capResult.cap || baseFee > capResult.cap;
+        const noAmount = realizedAmount <= 0;
+
+        elements.resultEyebrow.textContent = "Contingency fee · current ceiling check";
+        elements.resultTitle.textContent = "风险代理参考区间";
+        elements.sourceBadge.textContent = eligibility.review ? "需专项合规复核" : "现行上限校验";
+        elements.resultAmount.textContent = noAmount ? "￥—" : `${formatMoney(minimum)} — ${formatMoney(maximum).replace("￥", "")}`;
+        elements.resultCaption.textContent = noAmount
+          ? "请输入标的额并设置预计实现比例。"
+          : `按实现利益 ${formatPlainMoney(realizedAmount)}、内部参考费率 ${formatPercent(minRate, 1)}—${formatPercent(maxRate, 1)}${baseFee ? `、基础费 ${formatMoney(baseFee)}` : ""}测算${capped ? "；结果已按现行总额上限截断" : ""}。`;
+
+        setStats(
+          "现行收费上限",
+          noAmount ? "—" : formatMoney(capResult.cap),
+          "实现利益口径",
+          noAmount ? "—" : compactAmount(realizedAmount),
+          "监管可协商区间",
+          noAmount ? "—" : `￥0—${Math.round(capResult.cap).toLocaleString("zh-CN")}`
+        );
+
+        renderRows(capResult.rows);
+        renderLadder(RISK_TIERS, realizedAmount, "risk");
+        elements.legalNote.innerHTML = `<strong>${eligibility.review ? "专项复核：" : "适用提醒："}</strong> ${eligibility.message} 风险代理没有法定最低费率；页面的 ${formatPercent(minRate, 1)}—${formatPercent(maxRate, 1)} 是可修改的内部参考参数，不是政府定价。基础费及各阶段风险费合计均计入现行最高限额。`;
+        state.last = { mode: "风险代理", amount, realizedAmount, minimum, maximum, cap: capResult.cap, blocked: false, caption: elements.resultCaption.textContent };
+      }
+
+      function render() {
+        refreshAmountSource();
+        const amount = parseAmount();
+        const eligibility = riskEligibility();
+        updateAmountLabel();
+        renderRiskCompliance(eligibility);
+        elements.modeContext.textContent = state.mode === "fixed"
+          ? "律师服务费按《苏价费〔2017〕113号》“涉及财产、分档费率累进”口径作历史参考；下方另行显示案件受理费与财产保全费。"
+          : eligibility.blocked
+            ? `当前案型不得采用风险代理：${eligibility.message}`
+            : "风险代理法定上限以最终实现的债权或减免债务金额为基数。页面先按“争议标的额 × 预计实现比例”估算，再进行分段最高限额校验。";
+        elements.amountHelp.textContent = amount > 0
+          ? `${elements.amountSource.value === "components" ? "请求构成合计" : "人民币"} ${formatPlainMoney(amount)}`
+          : AMOUNT_OPTIONAL_CASES.has(elements.caseType.value) ? "当前案型可按件计算，金额可留空" : "请输入有效金额";
+        if (state.mode === "fixed") renderFixed(amount);
+        else renderRisk(amount);
+        renderClaimCosts();
+        renderQuoteTerms();
+        renderQuoteLetter();
+      }
+
+      function updateAmountLabel() {
+        if (elements.amountSource.value === "components") {
+          elements.amountLabel.textContent = state.mode === "risk" ? "预计争议标的额（按构成合计）" : "诉讼请求构成合计";
+          return;
+        }
+        if (state.mode === "risk") {
+          elements.amountLabel.textContent = "预计争议标的额";
+          return;
+        }
+        if (elements.litigationStage.value === "appeal") {
+          elements.amountLabel.textContent = "不服一审部分上诉请求金额";
+          return;
+        }
+        if (elements.caseType.value === "divorce") {
+          elements.amountLabel.textContent = "财产分割争议金额（无财产请输入 0）";
+          return;
+        }
+        if (elements.caseType.value === "inheritance") {
+          elements.amountLabel.textContent = "争议遗产金额／价额";
+          return;
+        }
+        if (elements.caseType.value === "personality") {
+          elements.amountLabel.textContent = "损害赔偿请求金额";
+          return;
+        }
+        if (AMOUNT_OPTIONAL_CASES.has(elements.caseType.value)) {
+          elements.amountLabel.textContent = "争议金额（当前案型可留空）";
+          return;
+        }
+        elements.amountLabel.textContent = "诉讼请求金额／价额";
+      }
+
+      function switchMode(mode) {
+        state.mode = mode;
+        document.querySelectorAll(".mode-button").forEach((button) => {
+          button.setAttribute("aria-selected", String(button.dataset.mode === mode));
+        });
+        const fixed = mode === "fixed";
+        elements.fixedOptions.hidden = !fixed;
+        elements.riskOptions.hidden = fixed;
+        updateAmountLabel();
+        const eligibility = riskEligibility();
+        elements.modeContext.textContent = fixed
+          ? "律师服务费按《苏价费〔2017〕113号》“涉及财产、分档费率累进”口径作历史参考；下方另行显示案件受理费与财产保全费。"
+          : eligibility.blocked
+            ? `当前案型不得采用风险代理：${eligibility.message}`
+            : "风险代理法定上限以最终实现的债权或减免债务金额为基数。页面先按“争议标的额 × 预计实现比例”估算，再进行分段最高限额校验。";
+        render();
+      }
+
+      function copyResult() {
+        if (!state.last || (state.last.amount <= 0 && !AMOUNT_OPTIONAL_CASES.has(elements.caseType.value))) return;
+        const line = state.last.blocked ? "当前案型禁止风险代理" : `${formatMoney(state.last.minimum)}—${formatMoney(state.last.maximum).replace("￥", "")}`;
+        const extra = state.last.mode === "风险代理" && !state.last.blocked ? `\n现行风险代理收费上限：${formatMoney(state.last.cap)}` : "";
+        const result = litigationResult();
+        const currentFee = ["通常不交", "不交"].includes(result.base.text) ? result.base.text : feeRange(result.currentLow, result.currentHigh);
+        const preserveText = result.preserveAmount > 0
+          ? `${formatMoney(result.preserve, 2)}${result.preserveAuto ? "（以诉请金额为计算基数）" : "（以实际保全金额为计算基数）"}`
+          : result.preserveNoAmount ? `${formatMoney(result.preserve, 2)}（不涉及财产数额）` : "—";
+        const totalText = feeRange(result.currentLow + (result.preserveEnabled ? result.preserve : 0), result.currentHigh + (result.preserveEnabled ? result.preserve : 0));
+        const componentsText = elements.amountSource.value === "components"
+          ? `\n请求构成：本金 ${formatMoney(Number(elements.claimPrincipal.value) || 0, 2)}；利息 ${formatMoney(Number(elements.claimInterest.value) || 0, 2)}；违约金／赔偿金 ${formatMoney(Number(elements.claimPenalty.value) || 0, 2)}；其他 ${formatMoney(Number(elements.claimOther.value) || 0, 2)}`
+          : "";
+        const costText = `\n\n诉讼费用参考\n案件类型：${elements.caseType.options[elements.caseType.selectedIndex].text}\n诉讼阶段：${elements.litigationStage.options[elements.litigationStage.selectedIndex].text}\n程序／结案状态：${elements.feeScenario.options[elements.feeScenario.selectedIndex].text}${componentsText}\n案件受理费（全额基准）：${result.base.text || feeRange(result.base.low, result.base.high)}\n案件受理费（当前状态）：${currentFee}\n财产保全费：${preserveText}\n预计预交费用合计：${totalText}`;
+        const text = `律师费测算\n收费模式：${state.last.mode}\n标的额：${formatMoney(state.last.amount)}\n律师费参考区间：${line}${extra}${costText}\n\n说明：${state.last.caption}\n\n${elements.quoteTerms.value}\n\n本结果仅用于内部讨论；律师费以本所备案收费标准及正式委托合同为准，诉讼费用以法院实际核定为准。`;
+        const done = () => {
+          elements.toast.textContent = "已复制报价结果";
+          elements.toast.classList.add("show");
+          window.setTimeout(() => elements.toast.classList.remove("show"), 1800);
+        };
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(text).then(done);
+        } else {
+          const textarea = document.createElement("textarea");
+          textarea.value = text;
+          textarea.style.position = "fixed";
+          textarea.style.opacity = "0";
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand("copy");
+          textarea.remove();
+          done();
+        }
+      }
+
+      function copyQuoteTerms() {
+        const text = elements.quoteTerms.value;
+        const done = () => {
+          elements.toast.textContent = "已复制报价条款";
+          elements.toast.classList.add("show");
+          window.setTimeout(() => elements.toast.classList.remove("show"), 1800);
+        };
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(text).then(done);
+        } else {
+          const textarea = document.createElement("textarea");
+          textarea.value = text;
+          textarea.style.position = "fixed";
+          textarea.style.opacity = "0";
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand("copy");
+          textarea.remove();
+          done();
+        }
+      }
+
+      function copyQuoteLetter() {
+        const text = elements.quoteLetter.value;
+        const done = () => {
+          elements.toast.textContent = "已复制报价函";
+          elements.toast.classList.add("show");
+          window.setTimeout(() => elements.toast.classList.remove("show"), 1800);
+        };
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(text).then(done);
+        } else {
+          const textarea = document.createElement("textarea");
+          textarea.value = text;
+          textarea.style.position = "fixed";
+          textarea.style.opacity = "0";
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand("copy");
+          textarea.remove();
+          done();
+        }
+      }
+
+      function clearAmountInputs() {
+        elements.amount.value = "";
+        [elements.claimPrincipal, elements.claimInterest, elements.claimPenalty, elements.claimOther].forEach((input) => {
+          input.value = "0";
+        });
+        elements.preservationAmount.value = "0";
+        render();
+      }
+
+      function resetParameters() {
+        elements.amount.value = "100";
+        elements.unit.value = "10000";
+        elements.stageFactor.value = "1";
+        elements.complexCase.checked = false;
+        elements.amountSource.value = "direct";
+        [elements.claimPrincipal, elements.claimInterest, elements.claimPenalty, elements.claimOther].forEach((input) => {
+          input.value = "0";
+        });
+        elements.caseType.value = "property";
+        elements.litigationStage.value = "first";
+        elements.feeScenario.value = "ordinary";
+        elements.preservation.checked = false;
+        elements.preservationAmount.value = "0";
+        elements.preserveUnit.value = "10000";
+        elements.realizationRate.value = "100";
+        elements.riskMinRate.value = "8";
+        elements.riskMaxRate.value = "10";
+        elements.baseFee.value = "0";
+        elements.vatRate.value = "6";
+        elements.invoiceType.value = "增值税专用发票";
+        elements.letterRecipient.value = "XX";
+        elements.letterCounterparty.value = "XXX";
+        elements.letterCause.value = "案由";
+        elements.letterBasicFee.value = "";
+        elements.letterFixedFirstFee.value = "";
+        elements.letterAppealFee.value = "";
+        elements.letterExecutionFee.value = "";
+        const defaultRiskBasis = document.querySelector('input[name="riskBasis"][value="实际收回款项（含执行、和解、调解等）的"]');
+        if (defaultRiskBasis) defaultRiskBasis.checked = true;
+        switchMode("fixed");
+      }
+
+      document.querySelectorAll(".mode-button").forEach((button) => {
+        button.addEventListener("click", () => switchMode(button.dataset.mode));
+      });
+
+      [
+        elements.amount, elements.unit, elements.stageFactor, elements.complexCase,
+        elements.realizationRate, elements.riskMinRate, elements.riskMaxRate, elements.baseFee,
+        elements.vatRate, elements.invoiceType,
+        elements.caseType, elements.litigationStage, elements.feeScenario, elements.amountSource,
+        elements.claimPrincipal, elements.claimInterest, elements.claimPenalty, elements.claimOther,
+        elements.preservationAmount, elements.preserveUnit
+      ].forEach((input) => {
+        input.addEventListener("input", render);
+        input.addEventListener("change", render);
+      });
+      [elements.preservation].forEach((input) => {
+        input.addEventListener("input", render);
+        input.addEventListener("change", render);
+      });
+      [
+        elements.letterRecipient, elements.letterCounterparty, elements.letterCause,
+        elements.letterBasicFee, elements.letterFixedFirstFee, elements.letterAppealFee,
+        elements.letterExecutionFee, ...document.querySelectorAll('input[name="riskBasis"]')
+      ].forEach((input) => {
+        input.addEventListener("input", render);
+        input.addEventListener("change", render);
+      });
+
+      $("copyResult").addEventListener("click", copyResult);
+      $("copyQuoteTerms").addEventListener("click", copyQuoteTerms);
+      $("copyQuoteLetter").addEventListener("click", copyQuoteLetter);
+      $("printResult").addEventListener("click", () => window.print());
+      $("clearAmount").addEventListener("click", clearAmountInputs);
+      $("resetParams").addEventListener("click", resetParameters);
+      render();
+    })();
+  </script>
+</body>
+</html>
